@@ -12,7 +12,7 @@ const eventSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: [
-      "Web3 Hacks",
+      "Web3 Hackathon",
       "Live shows",
       "Tourism",
       "Fever Origin",
@@ -20,12 +20,21 @@ const eventSchema = new mongoose.Schema({
       "Workshop",
       "Other",
     ],
-    default: "Web3 Hacks",
+    default: "Live shows",
   },
   organizerAddress: { type: String, required: true }, // Wallet address of event organizer
   contractEventId: { type: Number }, // ID from the smart contract
   transactionHash: { type: String }, // Hash of the creation transaction
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  participants: [
+    {
+      walletAddress: { type: String, required: true },
+      spotifyId: { type: String }, // For Live shows events
+      githubUsername: { type: String }, // For Web3 Hackathon events
+      joinedAt: { type: Date, default: Date.now },
+      ticketTokenId: { type: Number }, // NFT token ID if applicable
+    },
+  ],
   createdAt: { type: Date, default: Date.now },
 });
 
