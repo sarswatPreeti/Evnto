@@ -329,6 +329,100 @@ app.delete("/api/events/:id", async (req, res) => {
   }
 });
 
+// Join Event (with conditional ID requirements based on category)
+app.post("/api/events/:id/join", validateWalletAddress, async (req, res) => {
+  try {
+    const { spotifyId, githubUsername, ticketTokenId } = req.body;
+    const event = await Event.findById(req.params.id);
+
+    if (!event) return res.status(404).json({ error: "Event not found" });
+
+    // Check if user already joined
+    const alreadyJoined = event.participants?.some(
+      (p) => p.walletAddress === req.walletAddress
+    );
+    if (alreadyJoined) {
+      return res.status(400).json({ error: "Already joined this event" });
+    }
+
+    // Validate required fields based on event category
+    if (event.category === "Live shows" && !spotifyId) {
+      return res.status(400).json({
+        error: "Spotify ID is required for Live shows events",
+      });
+    }
+
+    if (event.category === "Web3 Hackathon" && !githubUsername) {
+      return res.status(400).json({
+        error: "GitHub username is required for Web3 Hackathon events",
+      });
+    }
+
+    // Add participant
+    const participant = {
+      walletAddress: req.walletAddress,
+      spotifyId: event.category === "Live shows" ? spotifyId : undefined,
+      githubUsername:
+        event.category === "Web3 Hackathon" ? githubUsername : undefined,
+      ticketTokenId,
+      joinedAt: new Date(),
+    };
+
+    event.participants = event.participants || [];
+    event.participants.push(participant);
+    await event.save();
+
+    res.json({
+      success: true,
+      message: "Successfully joined event",
+      participant,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ error: message });
+  }
+});
+
+// Check if user has joined an event
+app.get(
+  "/api/events/:id/check-joined",
+  validateWalletAddress,
+  async (req, res) => {
+    try {
+      const event = await Event.findById(req.params.id);
+      if (!event) return res.status(404).json({ error: "Event not found" });
+
+      const participant = event.participants?.find(
+        (p) => p.walletAddress === req.walletAddress
+      );
+
+      res.json({
+        joined: !!participant,
+        participant: participant || null,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      res.status(500).json({ error: message });
+    }
+  }
+);
+
+// Get event participants
+app.get("/api/events/:id/participants", async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+
+    res.json({
+      count: event.participants?.length || 0,
+      participants: event.participants || [],
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ error: message });
+  }
+});
+
 // MongoDB connection
 const dbUrl = process.env.DB_URL || process.env.DATABASE_URL;
 console.log("🔍 Environment check:");
