@@ -190,7 +190,7 @@ export default function EvntoApp() {
             </div>
             <span>All</span>
           </button>
-          {["Live shows", "Tourism", "Fever Origin"].map((cat) => (
+          {["Web3 Hackathon", "Live shows", "Tourism", "Fever Origin"].map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
