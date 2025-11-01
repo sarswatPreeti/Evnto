@@ -13,14 +13,18 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@octokit/rest": "^20.0.2",
     "bcryptjs": "^3.0.2",
+    "circomlibjs": "^0.1.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "ffjavascript": "^0.2.60",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.0",
     "multer": "^2.0.2",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "snarkjs": "^0.7.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

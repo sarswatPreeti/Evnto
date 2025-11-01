@@ -9,6 +9,7 @@ import { register, login, authMiddleware } from "./auth.js";
 import upload from "./upload.js";
 import path from "path";
 import { fileURLToPath } from "url";
+import zkRoutes from "./routes/zk.js";
 
 // Get current directory for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -47,6 +48,9 @@ const pool = new Pool();
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
+
+// ZK Proof routes for GitHub verification
+app.use("/api/zk", zkRoutes);
 
 // Simple wallet address validation middleware
 const validateWalletAddress = (req, res, next) => {
