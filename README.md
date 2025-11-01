@@ -102,17 +102,7 @@ Evnto aims to transform event ticketing by:
 
 As Monad moves to mainnet, Evnto will evolve into a **high-performance platform** capable of serving millions with low gas fees and ecosystem integrations.
 
----
 
-## 🗺️ Project Roadmap
-
-| Phase | Milestone |
-|--------|------------|
-| **Phase 1** | MVP launch with hackathons and concert support on Monad testnet |
-| **Phase 2** | Zero-Knowledge eligibility proofs for private access |
-| **Phase 3** | IPFS metadata storage and secondary resale marketplace |
-| **Phase 4** | DAO-driven community and sponsor integration |
-| **Phase 5** | Mainnet deployment and commercial rollout |
 
 ---
 
