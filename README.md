@@ -124,9 +124,9 @@ By merging blockchain security with an intuitive design, it creates a **transpar
 
 ## 📸 Screenshots
 
-| Profile | Upcoming Event | Event Feed |
-|:--:|:--:|:--:|
-| ![Profile](.<img width="469" height="861" alt="image" src="https://github.com/user-attachments/assets/637517e9-83af-4787-b168-0d52006bb2bc" />
-) | ![Upcoming](<img width="469" height="861" alt="image" src="https://github.com/user-attachments/assets/b9014fc8-5152-42f7-a2f5-606b1554eb4a" />
-) | ![Feed](<img width="445" height="863" alt="image" src="https://github.com/user-attachments/assets/b9f74fb2-1d7e-4e9f-9bf0-8cbf51704eb1" />
+| ![Profile](<img width="469" height="861" alt="image" src="https://github.com/user-attachments/assets/951c3dd8-2118-4e70-8b93-8776201b4e29" />
+) | ![Event](<img width="469" height="861" alt="image" src="https://github.com/user-attachments/assets/24967305-5cb3-468f-b169-0d2bf9672975" />
+) | ![Feed](<img width="445" height="863" alt="image" src="https://github.com/user-attachments/assets/d34b235f-ee35-4559-a796-a1450c577a31" />
 ) |
+|:--:|:--:|:--:|
+
