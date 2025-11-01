@@ -10,6 +10,7 @@ import upload from "./upload.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import zkRoutes from "./routes/zk.js";
+import spotifyRoutes from "./routes/spotify.js";
 
 // Get current directory for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -51,6 +52,9 @@ app.get("/api/health", (req, res) => {
 
 // ZK Proof routes for GitHub verification
 app.use("/api/zk", zkRoutes);
+
+// Spotify OAuth and ZK verification routes
+app.use("/api/spotify", spotifyRoutes);
 
 // Simple wallet address validation middleware
 const validateWalletAddress = (req, res, next) => {
