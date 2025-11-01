@@ -20,7 +20,7 @@ export default function CreateEventPage() {
     location: "",
     price: "0.00001",
     seats: "",
-    category: "Web3 Hacks",
+    category: "Web3 Hackathon",
   });
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -177,7 +177,7 @@ export default function CreateEventPage() {
               required
               className="w-full px-3 py-2 bg-kaizen-dark-gray border border-kaizen-gray/30 text-kaizen-white rounded-md focus:outline-none focus:ring-2 focus:ring-kaizen-yellow"
             >
-              <option value="Web3 Hacks">Web3 Hacks</option>
+              <option value="Web3 Hackathon">Web3 Hackathon</option>
               <option value="Live shows">Live shows</option>
               <option value="Tourism">Tourism</option>
               <option value="Fever Origin">Fever Origin</option>
