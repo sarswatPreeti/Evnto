@@ -99,6 +99,136 @@ export function formatProofForContract(proof: any, publicSignals: string[]) {
 }
 
 /**
+ * Verify Spotify eligibility and generate ZK proof
+ * @param spotifyToken - Spotify OAuth token
+ * @param artistId - Artist ID to verify
+ * @param eventId - Event ID
+ * @returns ZK proof data
+ */
+export async function verifySpotifyWithZK(
+  spotifyToken: string,
+  artistId: string,
+  eventId: string
+): Promise<ZKProofResponse> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  
+  // Get user profile first
+  const profileResponse = await fetch(`${apiUrl}/api/spotify/profile?access_token=${spotifyToken}`);
+  
+  if (!profileResponse.ok) {
+    throw new Error('Failed to fetch Spotify profile');
+  }
+  
+  const profileData = await profileResponse.json();
+  const spotifyUserId = profileData.profile.id;
+  
+  // Verify eligibility
+  const response = await fetch(`${apiUrl}/api/spotify/verify`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      spotifyUserId,
+      artistId,
+      eventId,
+      access_token: spotifyToken,
+    }),
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to verify Spotify eligibility');
+  }
+  
+  const data = await response.json();
+  
+  return {
+    success: data.success,
+    proof: data.proof,
+    publicSignals: data.publicSignals,
+    commitment: '', // Not used for Spotify
+    isEligible: data.artistFound,
+    message: data.success ? 'You are a top fan!' : 'Not in top artists',
+  };
+}
+
+/**
+ * Mint priority ticket on-chain with ZK proof
+ * @param proof - ZK proof from verification
+ * @param publicSignals - Public signals
+ * @param eventId - Event ID
+ * @param eventTitle - Event title
+ * @param eventDate - Event timestamp
+ * @param type - Type of verification (github or spotify)
+ * @param contractAddress - Contract address
+ * @returns Transaction receipt
+ */
+export async function mintPriorityTicketWithProof(
+  proof: any,
+  publicSignals: string[],
+  eventId: string,
+  eventTitle: string,
+  eventDate: number,
+  type: 'github' | 'spotify',
+  contractAddress: string
+) {
+  if (typeof window === 'undefined' || !window.ethereum) {
+    throw new Error('No Ethereum provider found');
+  }
+
+  const { ethers } = await import('ethers');
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+
+  // Format proof for Solidity
+  const formattedProof = {
+    a: [proof.pi_a[0], proof.pi_a[1]],
+    b: [
+      [proof.pi_b[0][0], proof.pi_b[0][1]],
+      [proof.pi_b[1][0], proof.pi_b[1][1]],
+    ],
+    c: [proof.pi_c[0], proof.pi_c[1]],
+  };
+
+  // Contract ABI
+  const contractABI = [
+    'function mintPriorityTicketHackathon((uint256[2] a, uint256[2][2] b, uint256[2] c), uint256[2], uint256, string, uint256) external payable returns (uint256)',
+    'function mintPriorityTicketConcert((uint256[2] a, uint256[2][2] b, uint256[2] c), uint256[3], uint256, string, uint256) external payable returns (uint256)',
+  ];
+
+  const contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+  // Priority ticket price (0.01 ETH)
+  const priceInWei = ethers.parseEther('0.01');
+
+  let tx;
+
+  if (type === 'github') {
+    tx = await contract.mintPriorityTicketHackathon(
+      formattedProof,
+      publicSignals,
+      eventId,
+      eventTitle,
+      eventDate,
+      { value: priceInWei }
+    );
+  } else {
+    tx = await contract.mintPriorityTicketConcert(
+      formattedProof,
+      publicSignals,
+      eventId,
+      eventTitle,
+      eventDate,
+      { value: priceInWei }
+    );
+  }
+
+  const receipt = await tx.wait();
+  return receipt;
+}
+
+/**
  * Parse proof response for contract interaction
  */
 export function parseProofForContract(proofData: ZKProofResponse) {

@@ -1,7 +1,28 @@
-const express = require('express');
+import express from 'express';
+import { Octokit } from '@octokit/rest';
+// import { generateEligibilityProof } from '../../circuits/scripts/generate-proof.js';
+
 const router = express.Router();
-const { Octokit } = require('@octokit/rest');
-const { generateEligibilityProof } = require('../../circuits/scripts/generate-proof');
+
+// Temporary mock proof generation (replace with actual circuit when compiled)
+async function generateEligibilityProof(githubId, web3RepoCount, web3CommitCount) {
+    const isEligible = web3RepoCount >= 1 || web3CommitCount >= 10;
+    
+    // Mock proof structure (replace with actual snarkjs proof)
+    return {
+        proof: {
+            pi_a: ["0", "0"],
+            pi_b: [["0", "0"], ["0", "0"]],
+            pi_c: ["0", "0"]
+        },
+        publicSignals: [
+            "12345", // Mock commitment
+            isEligible ? "1" : "0" // isEligible
+        ],
+        commitment: "12345",
+        isEligible: isEligible
+    };
+}
 
 // Web3-related topics and languages to check
 const WEB3_TOPICS = [
@@ -221,4 +242,4 @@ router.get('/health', (req, res) => {
     });
 });
 
-module.exports = router;
+export default router;

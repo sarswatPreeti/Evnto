@@ -155,6 +155,84 @@ contract EventTicket is ERC721, Ownable, ReentrancyGuard {
     }
     
     /**
+     * @dev Mint priority ticket for concert with Spotify ZK proof verification
+     * @param proof The Groth16 ZK proof
+     * @param publicSignals Public signals [eventId, result, nullifier]
+     * @param eventId The event ID
+     * @param eventTitle The event title
+     * @param eventDate The event timestamp
+     * 
+     * Requirements:
+     * - Valid ZK proof proving user is a top fan of artist
+     * - Nullifier not previously used (prevents double minting)
+     * - User doesn't already have priority ticket for this event
+     * - Event date is in the future
+     */
+    function mintPriorityTicketConcert(
+        Proof calldata proof,
+        uint256[3] calldata publicSignals,
+        uint256 eventId,
+        string memory eventTitle,
+        uint256 eventDate
+    ) external payable nonReentrant returns (uint256) {
+        // Extract signals: [eventId, result, nullifier]
+        uint256 signalEventId = publicSignals[0];
+        uint256 result = publicSignals[1];
+        uint256 nullifier = publicSignals[2];
+        
+        bytes32 nullifierHash = bytes32(nullifier);
+        
+        // Validation checks
+        require(msg.value >= priorityTicketPrice, "Insufficient payment");
+        require(eventDate > block.timestamp, "Event must be in future");
+        require(signalEventId == eventId, "Event ID mismatch");
+        require(!hasPriorityTicket[eventId][msg.sender], "Already has priority ticket");
+        require(!usedCommitments[nullifierHash], "Nullifier already used");
+        require(!hasTicket[eventId][msg.sender], "Already has ticket for event");
+        
+        // Verify ZK proof using Spotify verifier
+        // Note: You may need a separate verifier contract for Spotify
+        bool isValidProof = verifier.verifyProof(
+            proof.a,
+            proof.b,
+            proof.c,
+            publicSignals
+        );
+        
+        require(isValidProof, "Invalid ZK proof");
+        require(result == 1, "Not a top fan of artist");
+        
+        // Mark nullifier as used to prevent double minting
+        usedCommitments[nullifierHash] = true;
+        
+        // Mint ticket
+        tokenCounter++;
+        uint256 tokenId = tokenCounter;
+        
+        // Create soulbound ticket (locked until after event)
+        tickets[tokenId] = Ticket({
+            eventId: eventId,
+            holder: msg.sender,
+            tier: TicketTier.PRIORITY,
+            mintTime: block.timestamp,
+            isSoulbound: true,
+            eventDate: eventDate,
+            eventTitle: eventTitle
+        });
+        
+        hasTicket[eventId][msg.sender] = true;
+        hasPriorityTicket[eventId][msg.sender] = true;
+        userTickets[msg.sender].push(tokenId);
+        
+        _safeMint(msg.sender, tokenId);
+        
+        emit PriorityTicketMintedWithZK(tokenId, eventId, msg.sender, nullifierHash);
+        emit TicketMinted(tokenId, eventId, msg.sender, TicketTier.PRIORITY);
+        
+        return tokenId;
+    }
+    
+    /**
      * @dev Mint standard ticket (no ZK proof required)
      */
     function mintStandardTicket(

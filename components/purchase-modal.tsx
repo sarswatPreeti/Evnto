@@ -179,18 +179,7 @@ export function PurchaseModal({
     }
   };
 
-  const handleJoinModalSuccess = async (data: {
-    spotifyId?: string;
-    githubUsername?: string;
-  }) => {
-    console.log("✅ Join modal success, received data:", data);
-    setUserIds(data);
-    setHasJoined(true);
-    setShowJoinModal(false);
-
-    // Now proceed with blockchain transaction
-    await processJoinEvent();
-  };
+  
 
   const resetModal = () => {
     setStep("confirm");

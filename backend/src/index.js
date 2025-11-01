@@ -11,6 +11,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import zkRoutes from "./routes/zk.js";
 import spotifyRoutes from "./routes/spotify.js";
+import githubRoutes from "./routes/github.js";
 
 // Get current directory for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -52,6 +53,9 @@ app.get("/api/health", (req, res) => {
 
 // ZK Proof routes for GitHub verification
 app.use("/api/zk", zkRoutes);
+
+// GitHub OAuth and ZK verification routes
+app.use("/api/github", githubRoutes);
 
 // Spotify OAuth and ZK verification routes
 app.use("/api/spotify", spotifyRoutes);

@@ -1,7 +1,7 @@
 import express from 'express';
 import SpotifyWebApi from 'spotify-web-api-node';
 import { buildPoseidon } from 'circomlibjs';
-import snarkjs from 'snarkjs';
+import * as snarkjs from 'snarkjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 

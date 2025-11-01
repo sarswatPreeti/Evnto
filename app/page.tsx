@@ -247,48 +247,56 @@ export default function EvntoApp() {
                     alt={event.title}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                  {/* Date Badge */}
-                  <div className="absolute top-4 left-4 bg-kaizen-white text-kaizen-black px-3 py-1 rounded-lg text-sm font-medium">
+                  {/* Gradient overlay focused on bottom for text readability while showing image */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20"></div>
+                  {/* Date Badge - Moved to right side */}
+                  <div className="absolute top-4 right-4 bg-kaizen-white text-kaizen-black px-3 py-2 rounded-xl text-sm font-semibold text-center shadow-lg">
                     {event.date ? (
                       <>
-                        {new Date(event.date).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                        <br />
-                        {new Date(event.date).toLocaleDateString("en-US", {
-                          year: "numeric",
-                        })}
+                        <div className="text-xs uppercase text-kaizen-gray">
+                          {new Date(event.date).toLocaleDateString("en-US", {
+                            month: "short",
+                          })}
+                        </div>
+                        <div className="text-2xl font-bold leading-tight">
+                          {new Date(event.date).toLocaleDateString("en-US", {
+                            day: "numeric",
+                          })}
+                        </div>
+                        <div className="text-xs text-kaizen-gray">
+                          {new Date(event.date).toLocaleDateString("en-US", {
+                            year: "numeric",
+                          })}
+                        </div>
                       </>
                     ) : (
                       "TBD"
                     )}
                   </div>
-                  {/* Heart Icon */}
+                  {/* Heart Icon - Moved to left side */}
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute top-4 right-4 text-white hover:bg-white/20"
+                    className="absolute top-4 left-4 text-white hover:bg-white/20 bg-black/30 backdrop-blur-sm"
                     onClick={(e) => e.preventDefault()}
                   >
                     <Heart className="w-5 h-5" />
                   </Button>
                   {/* Event Details */}
                   <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <h3 className="text-white font-bold text-xl mb-2">
+                    <h3 className="text-white font-bold text-2xl mb-2 drop-shadow-lg" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
                       {event.title}
                     </h3>
                     <div className="flex items-center gap-1 mb-2">
-                      <MapPin className="w-4 h-4 text-white/80" />
-                      <p className="text-white/80 text-sm">
+                      <MapPin className="w-4 h-4 text-white drop-shadow-md" />
+                      <p className="text-white text-sm drop-shadow-md" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
                         {event.location || "Location TBD"}
                       </p>
                     </div>
                     {event.date && (
                       <div className="flex items-center gap-1 mb-4">
-                        <Clock className="w-4 h-4 text-white/80" />
-                        <p className="text-white/80 text-sm">
+                        <Clock className="w-4 h-4 text-white drop-shadow-md" />
+                        <p className="text-white text-sm drop-shadow-md" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
                           {new Date(event.date).toLocaleDateString("en-US", {
                             weekday: "short",
                             month: "short",
@@ -306,27 +314,27 @@ export default function EvntoApp() {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
                         <div className="flex -space-x-2">
-                          <Avatar className="w-8 h-8 border-2 border-white">
+                          <Avatar className="w-8 h-8 border-2 border-white ring-2 ring-black/50">
                             <AvatarImage src="/conference-attendee-one.png" />
                             <AvatarFallback className="bg-kaizen-yellow text-kaizen-black text-xs">
                               A
                             </AvatarFallback>
                           </Avatar>
-                          <Avatar className="w-8 h-8 border-2 border-white">
+                          <Avatar className="w-8 h-8 border-2 border-white ring-2 ring-black/50">
                             <AvatarImage src="/conference-attendee-two.png" />
                             <AvatarFallback className="bg-kaizen-dark-gray text-kaizen-white text-xs">
                               B
                             </AvatarFallback>
                           </Avatar>
-                          <Avatar className="w-8 h-8 border-2 border-white">
-                            <AvatarFallback className="bg-kaizen-yellow text-kaizen-black text-xs">
+                          <Avatar className="w-8 h-8 border-2 border-white ring-2 ring-black/50">
+                            <AvatarFallback className="bg-kaizen-yellow text-kaizen-black text-xs font-semibold">
                               1.2k
                             </AvatarFallback>
                           </Avatar>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-white font-bold text-2xl">
+                        <p className="text-white font-bold text-3xl drop-shadow-xl" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.9)' }}>
                           {event.price ? `${event.price} MON` : "Free"}
                         </p>
                       </div>
