@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -14,7 +14,7 @@ import {
 import { useWallet } from "@/contexts/WalletContext";
 import { joinEvent, sendPayment } from "@/lib/monad-utils";
 import { TransactionDrawer } from "./transaction-drawer";
-import { JoinEventModal } from "./JoinEventModal";
+import JoinEventModal from "./JoinEventModal";
 
 interface PurchaseModalProps {
   isOpen: boolean;
@@ -60,7 +60,46 @@ export function PurchaseModal({
   });
   const [showTransactionDrawer, setShowTransactionDrawer] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [hasJoined, setHasJoined] = useState(false);
+  const [userIds, setUserIds] = useState<{
+    spotifyId?: string;
+    githubUsername?: string;
+  }>({});
   const { address } = useWallet();
+
+  // Check if user already joined the event when modal opens
+  useEffect(() => {
+    if (isOpen && address && eventId) {
+      checkIfAlreadyJoined();
+    }
+  }, [isOpen, address, eventId]);
+
+  const checkIfAlreadyJoined = async () => {
+    if (!eventId || !address) return;
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/events/${eventId}/check-joined`,
+        {
+          headers: {
+            "x-wallet-address": address,
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (data.joined) {
+        setHasJoined(true);
+        setUserIds({
+          spotifyId: data.participant?.spotifyId,
+          githubUsername: data.participant?.githubUsername,
+        });
+        console.log("✅ User already joined this event:", data.participant);
+      }
+    } catch (error) {
+      console.error("Error checking join status:", error);
+    }
+  };
 
   const handleJoinEvent = async () => {
     if (!isWalletConnected || !address) {
@@ -72,12 +111,25 @@ export function PurchaseModal({
     const requiresAdditionalInfo =
       eventCategory === "Live shows" || eventCategory === "Web3 Hackathon";
 
-    if (requiresAdditionalInfo) {
+    if (requiresAdditionalInfo && !hasJoined) {
       setShowJoinModal(true);
       return;
     }
 
     // Otherwise proceed directly with blockchain transaction
+    await processJoinEvent();
+  };
+
+  const handleJoinModalSuccess = async (data: {
+    spotifyId?: string;
+    githubUsername?: string;
+  }) => {
+    console.log("✅ Join modal success, received data:", data);
+    setUserIds(data);
+    setHasJoined(true);
+    setShowJoinModal(false);
+
+    // Now proceed with blockchain transaction
     await processJoinEvent();
   };
 
@@ -127,10 +179,17 @@ export function PurchaseModal({
     }
   };
 
-  const handleJoinModalSuccess = () => {
-    // After user submits their info, proceed with blockchain transaction
+  const handleJoinModalSuccess = async (data: {
+    spotifyId?: string;
+    githubUsername?: string;
+  }) => {
+    console.log("✅ Join modal success, received data:", data);
+    setUserIds(data);
+    setHasJoined(true);
     setShowJoinModal(false);
-    processJoinEvent();
+
+    // Now proceed with blockchain transaction
+    await processJoinEvent();
   };
 
   const resetModal = () => {
@@ -190,6 +249,23 @@ export function PurchaseModal({
 
             {step === "confirm" && (
               <>
+                {/* Already Joined Status */}
+                {hasJoined && (
+                  <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span className="text-green-500 font-semibold text-sm">
+                        Already Registered
+                      </span>
+                    </div>
+                    <p className="text-kaizen-gray text-xs">
+                      You've already registered for this event
+                      {userIds.spotifyId && ` with Spotify ID: ${userIds.spotifyId}`}
+                      {userIds.githubUsername && ` with GitHub: ${userIds.githubUsername}`}
+                    </p>
+                  </div>
+                )}
+
                 {/* Event Details */}
                 <div className="flex items-center gap-4 mb-6">
                   <img
@@ -388,6 +464,19 @@ export function PurchaseModal({
         onClose={() => setShowTransactionDrawer(false)}
         transaction={transaction}
       />
+
+      {/* Join Event Modal (for collecting Spotify ID or GitHub username) */}
+      {eventId && address && (
+        <JoinEventModal
+          isOpen={showJoinModal}
+          onClose={() => setShowJoinModal(false)}
+          eventId={eventId}
+          eventCategory={eventCategory}
+          eventTitle={eventTitle}
+          walletAddress={address}
+          onSuccess={handleJoinModalSuccess}
+        />
+      )}
     </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,55 +13,65 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Music, Github, AlertCircle, Loader2 } from "lucide-react";
+import { Music, Github, Loader2, CheckCircle, XCircle } from "lucide-react";
 
 interface JoinEventModalProps {
   isOpen: boolean;
   onClose: () => void;
+  eventId: string;
   eventCategory: string;
   eventTitle: string;
   walletAddress: string;
-  eventId: string;
-  onSuccess?: () => void;
+  onSuccess: (data: { spotifyId?: string; githubUsername?: string }) => void;
 }
 
-export function JoinEventModal({
+export default function JoinEventModal({
   isOpen,
   onClose,
+  eventId,
   eventCategory,
   eventTitle,
   walletAddress,
-  eventId,
   onSuccess,
 }: JoinEventModalProps) {
   const [spotifyId, setSpotifyId] = useState("");
   const [githubUsername, setGithubUsername] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
-  const requiresSpotifyId = eventCategory === "Live shows";
-  const requiresGithubUsername = eventCategory === "Web3 Hackathon";
+  const isLiveShow = eventCategory === "Live shows";
+  const isWeb3Hackathon = eventCategory === "Web3 Hackathon";
+  const needsExtraInfo = isLiveShow || isWeb3Hackathon;
+
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset form when modal closes
+      setSpotifyId("");
+      setGithubUsername("");
+      setError("");
+      setSuccess(false);
+      setIsSubmitting(false);
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-    // Validate required fields
-    if (requiresSpotifyId && !spotifyId.trim()) {
-      setError("Spotify ID is required for Live shows events");
-      return;
-    }
-
-    if (requiresGithubUsername && !githubUsername.trim()) {
-      setError("GitHub username is required for Web3 Hackathon events");
-      return;
-    }
-
-    setLoading(true);
+    setIsSubmitting(true);
 
     try {
+      // Validate required fields
+      if (isLiveShow && !spotifyId.trim()) {
+        throw new Error("Spotify ID is required for Live shows events");
+      }
+      if (isWeb3Hackathon && !githubUsername.trim()) {
+        throw new Error("GitHub username is required for Web3 Hackathon events");
+      }
+
+      // Call backend API to join event
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/events/${eventId}/join`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/events/${eventId}/join`,
         {
           method: "POST",
           headers: {
@@ -69,10 +79,8 @@ export function JoinEventModal({
             "x-wallet-address": walletAddress,
           },
           body: JSON.stringify({
-            spotifyId: requiresSpotifyId ? spotifyId.trim() : undefined,
-            githubUsername: requiresGithubUsername
-              ? githubUsername.trim()
-              : undefined,
+            spotifyId: isLiveShow ? spotifyId.trim() : undefined,
+            githubUsername: isWeb3Hackathon ? githubUsername.trim() : undefined,
           }),
         }
       );
@@ -83,104 +91,126 @@ export function JoinEventModal({
         throw new Error(data.error || "Failed to join event");
       }
 
-      // Success
-      if (onSuccess) {
-        onSuccess();
-      }
-      handleClose();
+      console.log("✅ Successfully joined event:", data);
+      setSuccess(true);
+
+      // Pass the data back to parent
+      setTimeout(() => {
+        onSuccess({
+          spotifyId: isLiveShow ? spotifyId.trim() : undefined,
+          githubUsername: isWeb3Hackathon ? githubUsername.trim() : undefined,
+        });
+        onClose();
+      }, 1500);
     } catch (err) {
       console.error("Join event error:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to join event"
-      );
-    } finally {
-      setLoading(false);
+      setError(err instanceof Error ? err.message : "Failed to join event");
+      setIsSubmitting(false);
     }
   };
 
-  const handleClose = () => {
-    setSpotifyId("");
-    setGithubUsername("");
-    setError("");
-    onClose();
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Join {eventTitle}</DialogTitle>
+          <DialogTitle>Join Event</DialogTitle>
           <DialogDescription>
-            {requiresSpotifyId &&
-              "Please provide your Spotify ID to join this Live show event"}
-            {requiresGithubUsername &&
-              "Please provide your GitHub username to join this Web3 Hackathon"}
-            {!requiresSpotifyId &&
-              !requiresGithubUsername &&
-              "Confirm to join this event"}
+            {needsExtraInfo
+              ? `Complete your registration for ${eventTitle}`
+              : `Confirm your registration for ${eventTitle}`}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
-            {/* Spotify ID Input for Live shows */}
-            {requiresSpotifyId && (
-              <div className="space-y-2">
-                <Label htmlFor="spotifyId" className="flex items-center gap-2">
-                  <Music className="w-4 h-4 text-green-500" />
-                  Spotify ID
-                </Label>
-                <Input
-                  id="spotifyId"
-                  placeholder="Enter your Spotify ID"
-                  value={spotifyId}
-                  onChange={(e) => setSpotifyId(e.target.value)}
-                  disabled={loading}
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  Find your Spotify ID in your profile settings or Spotify URL
-                </p>
-              </div>
-            )}
-
-            {/* GitHub Username Input for Web3 Hackathon */}
-            {requiresGithubUsername && (
-              <div className="space-y-2">
-                <Label
-                  htmlFor="githubUsername"
-                  className="flex items-center gap-2"
-                >
-                  <Github className="w-4 h-4" />
-                  GitHub Username
-                </Label>
-                <Input
-                  id="githubUsername"
-                  placeholder="Enter your GitHub username"
-                  value={githubUsername}
-                  onChange={(e) => setGithubUsername(e.target.value)}
-                  disabled={loading}
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  Your GitHub username (without @)
-                </p>
-              </div>
-            )}
-
-            {/* Wallet Address Display */}
+            {/* Show wallet address */}
             <div className="space-y-2">
               <Label>Connected Wallet</Label>
-              <div className="p-2 bg-muted rounded-md">
-                <code className="text-xs break-all">{walletAddress}</code>
+              <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded text-sm font-mono break-all">
+                {walletAddress}
               </div>
             </div>
 
-            {/* Error Alert */}
+            {/* Spotify ID for Live shows */}
+            {isLiveShow && (
+              <div className="space-y-2">
+                <Label
+                  htmlFor="spotifyId"
+                  className="flex items-center gap-2 text-base font-semibold"
+                >
+                  <Music className="w-5 h-5 text-green-600" />
+                  Spotify User ID *
+                </Label>
+                <Input
+                  id="spotifyId"
+                  placeholder="e.g., yourspotifyusername"
+                  value={spotifyId}
+                  onChange={(e) => setSpotifyId(e.target.value)}
+                  required
+                  className="text-base"
+                  autoFocus
+                  disabled={isSubmitting || success}
+                />
+                <p className="text-xs text-muted-foreground">
+                  💡 This helps verify you're a real fan for priority access.
+                  Find your Spotify ID in your profile settings.
+                </p>
+              </div>
+            )}
+
+            {/* GitHub username for Web3 Hackathon */}
+            {isWeb3Hackathon && (
+              <div className="space-y-2">
+                <Label
+                  htmlFor="githubUsername"
+                  className="flex items-center gap-2 text-base font-semibold"
+                >
+                  <Github className="w-5 h-5" />
+                  GitHub Username *
+                </Label>
+                <Input
+                  id="githubUsername"
+                  placeholder="e.g., octocat"
+                  value={githubUsername}
+                  onChange={(e) => setGithubUsername(e.target.value)}
+                  required
+                  className="text-base"
+                  autoFocus
+                  disabled={isSubmitting || success}
+                />
+                <p className="text-xs text-muted-foreground">
+                  💡 Your GitHub profile helps verify Web3 contributions for
+                  priority tickets
+                </p>
+              </div>
+            )}
+
+            {/* No extra info needed */}
+            {!needsExtraInfo && (
+              <Alert>
+                <AlertDescription>
+                  Click "Join Event" to complete your registration
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Error display */}
             {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+              <Alert className="bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800">
+                <XCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800 dark:text-red-200">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Success display */}
+            {success && (
+              <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800 dark:text-green-200">
+                  Successfully joined the event! 🎉
+                </AlertDescription>
               </Alert>
             )}
           </div>
@@ -189,16 +219,21 @@ export function JoinEventModal({
             <Button
               type="button"
               variant="outline"
-              onClick={handleClose}
-              disabled={loading}
+              onClick={onClose}
+              disabled={isSubmitting || success}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
+            <Button type="submit" disabled={isSubmitting || success}>
+              {isSubmitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Joining...
+                </>
+              ) : success ? (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Joined!
                 </>
               ) : (
                 "Join Event"
