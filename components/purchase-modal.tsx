@@ -14,6 +14,7 @@ import {
 import { useWallet } from "@/contexts/WalletContext";
 import { joinEvent, sendPayment } from "@/lib/monad-utils";
 import { TransactionDrawer } from "./transaction-drawer";
+import { JoinEventModal } from "./JoinEventModal";
 
 interface PurchaseModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ interface PurchaseModalProps {
   isWalletConnected: boolean;
   onConnectWallet: () => void;
   eventId?: string;
+  eventCategory?: string;
   organizerAddress?: string;
   hasNFTReward?: boolean;
 }
@@ -45,6 +47,7 @@ export function PurchaseModal({
   isWalletConnected,
   onConnectWallet,
   eventId,
+  eventCategory = "Other",
   organizerAddress,
   hasNFTReward = true,
 }: PurchaseModalProps) {
@@ -56,6 +59,7 @@ export function PurchaseModal({
     action: "Event Join",
   });
   const [showTransactionDrawer, setShowTransactionDrawer] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
   const { address } = useWallet();
 
   const handleJoinEvent = async () => {
@@ -64,6 +68,20 @@ export function PurchaseModal({
       return;
     }
 
+    // If event requires Spotify ID or GitHub username, show the join modal first
+    const requiresAdditionalInfo =
+      eventCategory === "Live shows" || eventCategory === "Web3 Hackathon";
+
+    if (requiresAdditionalInfo) {
+      setShowJoinModal(true);
+      return;
+    }
+
+    // Otherwise proceed directly with blockchain transaction
+    await processJoinEvent();
+  };
+
+  const processJoinEvent = async () => {
     setStep("processing");
     setTransaction({
       status: "pending",
@@ -83,7 +101,7 @@ export function PurchaseModal({
 
       const joinResult = await joinEvent(
         eventId?.toString() || "1",
-        address,
+        address || "",
         priceToSend
       );
 
@@ -109,6 +127,12 @@ export function PurchaseModal({
     }
   };
 
+  const handleJoinModalSuccess = () => {
+    // After user submits their info, proceed with blockchain transaction
+    setShowJoinModal(false);
+    processJoinEvent();
+  };
+
   const resetModal = () => {
     setStep("confirm");
     setTransaction({ status: "pending", action: "Event Join" });
@@ -130,6 +154,19 @@ export function PurchaseModal({
 
   return (
     <>
+      {/* Join Event Modal (for collecting Spotify ID or GitHub username) */}
+      {eventId && address && (
+        <JoinEventModal
+          isOpen={showJoinModal}
+          onClose={() => setShowJoinModal(false)}
+          eventCategory={eventCategory}
+          eventTitle={eventTitle}
+          walletAddress={address}
+          eventId={eventId}
+          onSuccess={handleJoinModalSuccess}
+        />
+      )}
+
       <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
         <Card className="bg-kaizen-dark-gray border-none rounded-3xl w-full max-w-sm">
           <div className="p-6">
